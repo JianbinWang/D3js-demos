@@ -1,0 +1,99 @@
+<html>
+    <meta charset="utf-8">
+    <head>
+        <title>Seperate Click and Double Click event in a ForceLayout graph in D3.</title>
+        
+        <style>
+            .node {
+              stroke: #fff;
+              stroke-width: 1.5px;
+            }
+
+            .link {
+              stroke: #999;
+              stroke-opacity: .6;
+            }
+        </style>
+    </head>
+    <body>
+        <center><h1>Seperate Click and Double Click event</h1></center><br/>
+        <div id="graph"></div>
+        <hr/>
+        <span id="show" style="color:blue"></span>
+        <hr/>
+        Reference:<br/>
+        [1].<a href="http://bl.ocks.org/mbostock/4062045">Force-Directed Graph</a>    <br/>    
+        [2].<a href="http://bl.ocks.org/couchand/6394506#index.html">Distinguishing click and double-click in D3</a><br/>
+        
+
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="clickcancel.js"></script>
+        <!--Draw Forcelayout Graph-->
+        <script>
+            function drawGraph(graph){
+                var width = 960,
+                    height = 500;
+
+                var color = d3.scale.category20();
+
+                var force = d3.layout.force()
+                    .charge(-1000)
+                    .linkDistance(100)
+                    .size([width, height]);
+
+                var svg = d3.select("#graph").append("svg")
+                    .attr("width", width)
+                    .attr("height", height);
+
+                force
+                  .nodes(graph.nodes)
+                  .links(graph.links)
+                  .start();
+
+                var link = svg.selectAll(".link")
+                  .data(graph.links)
+                .enter().append("line")
+                  .attr("class", "link")
+                  .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
+                var node = svg.selectAll(".node")
+                  .data(graph.nodes)
+                .enter().append("circle")
+                  .attr("class", "node")
+                  .attr("r", 30)
+                  .style("fill", function(d) { return color(d.group); })
+                  .call(force.drag);
+                
+                <!-- Making use of the dispatcher to dispatch click and double click event seperately.-->
+                var dispatcher = clickcancel();
+	            node.call(dispatcher);
+	            dispatcher.on('click',  function() { 
+                                            document.getElementById("show").innerHTML = document.getElementById("show").innerHTML + "click&nbsp;&nbsp;";
+                                        })
+	                      .on('dblclick', function() { 
+                                            document.getElementById("show").innerHTML = document.getElementById("show").innerHTML + "dblclick&nbsp;&nbsp;";
+                                        });   
+                
+                //You can add other event listeners to nodes as normal.
+                node.on("mouseover",function(d){ console.log("Mouse Over");});
+                
+                node.append("title")
+                  .text(function(d) { return "Click or Double Click"; });
+
+                force.on("tick", function() {
+                link.attr("x1", function(d) { return d.source.x; })
+                    .attr("y1", function(d) { return d.source.y; })
+                    .attr("x2", function(d) { return d.target.x; })
+                    .attr("y2", function(d) { return d.target.y; });
+
+                node.attr("cx", function(d) { return d.x; })
+                    .attr("cy", function(d) { return d.y; });
+                });
+            }
+
+                var graph =  {"nodes":[{"id":1,"name":"Google","group":1},{"id":2,"name":"Apple","group":1},{"id":3,"name":"Facebook","group":1},{"id":4,"name":"Twitter","group":1},{"id":5,"name":"American","group":2}],"links":[{"source":0,"target":4,"value":1},{"source":1,"target":4,"value":8},{"source":2,"target":4,"value":10},{"source":3,"target":4,"value":6}]};
+
+                drawGraph(graph);
+            </script>
+    </body>
+</html>
